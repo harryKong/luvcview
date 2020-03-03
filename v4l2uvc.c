@@ -1,9 +1,9 @@
 /*******************************************************************************
-#	 	uvcview: Sdl video Usb Video Class grabber           .         #
+#       uvcview: Sdl video Usb Video Class grabber           .         #
 #This package work with the Logitech UVC based webcams with the mjpeg feature. #
 #All the decoding is in user space with the embedded jpeg decoder              #
 #.                                                                             #
-# 		Copyright (C) 2005 2006 Laurent Pinchart &&  Michel Xhaard     #
+#       Copyright (C) 2005 2006 Laurent Pinchart &&  Michel Xhaard     #
 #                                                                              #
 # This program is free software; you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
@@ -22,7 +22,6 @@
 *******************************************************************************/
 
 #include <stdlib.h>
-#include <SDL_timer.h>
 
 #include "v4l2uvc.h"
 #include "utils.h"
@@ -79,7 +78,7 @@ init_videoIn(struct vdIn *vd, char *device, int width, int height, int fps,
     if (width == 0 || height == 0)
         return -1;
     if (grabmethod < 0 || grabmethod > 1)
-        grabmethod = 1;		//mmap by default;
+        grabmethod = 1;     //mmap by default;
     vd->videodevice = NULL;
     vd->status = NULL;
     vd->pictName = NULL;
@@ -94,7 +93,7 @@ init_videoIn(struct vdIn *vd, char *device, int width, int height, int fps,
     vd->recordtime = 0;
     vd->framecount = 0;
     vd->recordstart = 0;
-    vd->getPict = 0;
+    //vd->getPict = getpictureflag;
     vd->signalquit = 1;
     vd->width = width;
     vd->height = height;
@@ -149,13 +148,13 @@ int enum_controls(int vd) //struct vdIn *vd)
     struct v4l2_queryctrl queryctrl;
     struct v4l2_querymenu querymenu;
     struct v4l2_control   control_s;
-    struct v4l2_input    *getinput;
+    struct v4l2_input*    getinput;
 
     //Name of the device
     getinput=(struct v4l2_input *) calloc(1, sizeof(struct v4l2_input));
     memset(getinput, 0, sizeof(struct v4l2_input));
     getinput->index=0;
-    ioctl(vd,VIDIOC_ENUMINPUT , getinput);
+    ioctl(vd,VIDIOC_ENUMINPUT, getinput);
     printf ("Available controls of device '%s' (Type 1=Integer 2=Boolean 3=Menu 4=Button)\n", getinput->name);
 
     //subroutine to read menu items of controls with type 3
@@ -168,7 +167,7 @@ int enum_controls(int vd) //struct vdIn *vd)
                 querymenu.index++) {
             if (0 == ioctl (vd, VIDIOC_QUERYMENU, &querymenu)) {
                 printf ("  index:%d name:%s\n", querymenu.index, querymenu.name);
-                SDL_Delay(10);
+                usleep(10);
             } else {
                 printf ("error getting control menu");
                 break;
@@ -187,7 +186,7 @@ int enum_controls(int vd) //struct vdIn *vd)
                 continue;
             control_s.id=queryctrl.id;
             ioctl(vd, VIDIOC_G_CTRL, &control_s);
-            SDL_Delay(10);
+            usleep(10);
             printf (" index:%-10d name:%-32s type:%d min:%-5d max:%-5d step:%-5d def:%-5d now:%d \n",
                     queryctrl.id, queryctrl.name, queryctrl.type, queryctrl.minimum,
                     queryctrl.maximum, queryctrl.step, queryctrl.default_value, control_s.value);
@@ -210,7 +209,7 @@ int enum_controls(int vd) //struct vdIn *vd)
                 continue;
             control_s.id=queryctrl.id;
             ioctl(vd, VIDIOC_G_CTRL, &control_s);
-            SDL_Delay(20);
+            usleep(10);
             printf (" index:%-10d name:%-32s type:%d min:%-5d max:%-5d step:%-5d def:%-5d now:%d \n",
                     queryctrl.id, queryctrl.name, queryctrl.type, queryctrl.minimum,
                     queryctrl.maximum, queryctrl.step, queryctrl.default_value, control_s.value);
@@ -237,7 +236,8 @@ int save_controls(int vd)
     configfile = fopen("luvcview.cfg", "w");
     if ( configfile == NULL) {
         printf( "saving configfile luvcview.cfg failed, errno = %d (%s)\n", errno, strerror( errno));
-    } else {
+    }
+    else {
         fprintf(configfile, "id         value      # luvcview control settings configuration file\n");
         for (queryctrl.id = V4L2_CID_BASE;
                 queryctrl.id < V4L2_CID_LASTP1;
@@ -247,14 +247,14 @@ int save_controls(int vd)
                     continue;
                 control_s.id=queryctrl.id;
                 ioctl(vd, VIDIOC_G_CTRL, &control_s);
-                SDL_Delay(10);
+                usleep(10);
                 fprintf (configfile, "%-10d %-10d # name:%-32s type:%d min:%-5d max:%-5d step:%-5d def:%d\n",
                          queryctrl.id, control_s.value, queryctrl.name, queryctrl.type, queryctrl.minimum,
                          queryctrl.maximum, queryctrl.step, queryctrl.default_value);
                 printf ("%-10d %-10d # name:%-32s type:%d min:%-5d max:%-5d step:%-5d def:%d\n",
                         queryctrl.id, control_s.value, queryctrl.name, queryctrl.type, queryctrl.minimum,
                         queryctrl.maximum, queryctrl.step, queryctrl.default_value);
-                SDL_Delay(10);
+                usleep(10);
             }
         }
         for (queryctrl.id = V4L2_CID_PRIVATE_BASE;;
@@ -266,7 +266,7 @@ int save_controls(int vd)
                     continue;
                 control_s.id=queryctrl.id;
                 ioctl(vd, VIDIOC_G_CTRL, &control_s);
-                SDL_Delay(10);
+                usleep(10);
                 fprintf (configfile, "%-10d %-10d # name:%-32s type:%d min:%-5d max:%-5d step:%-5d def:%d\n",
                          queryctrl.id, control_s.value, queryctrl.name, queryctrl.type, queryctrl.minimum,
                          queryctrl.maximum, queryctrl.step, queryctrl.default_value);
@@ -280,7 +280,7 @@ int save_controls(int vd)
         }
         fflush(configfile);
         fclose(configfile);
-        SDL_Delay(100);
+        usleep(10);
     }
 }
 
@@ -293,17 +293,19 @@ int load_controls(int vd) //struct vdIn *vd)
     configfile = fopen("luvcview.cfg", "r");
     if ( configfile == NULL) {
         printf( "configfile luvcview.cfg open failed, errno = %d (%s)\n", errno, strerror( errno));
-    } else {
+    }
+    else {
         printf("loading controls from luvcview.cfg \n");
         char buffer[512];
         fgets(buffer, sizeof(buffer), configfile);
-        while (NULL !=fgets(buffer, sizeof(buffer), configfile) ) {
+        while (NULL !=fgets(buffer, sizeof(buffer), configfile) )
+        {
             sscanf(buffer, "%i%i", &control.id, &control.value);
             if (ioctl(vd, VIDIOC_S_CTRL, &control))
                 printf("ERROR id:%d val:%d \n", control.id, control.value);
             else
                 printf("OK    id:%d val:%d \n", control.id, control.value);
-            SDL_Delay(20);
+            usleep(20);
         }
         fclose(configfile);
     }
@@ -342,6 +344,23 @@ static int init_v4l2(struct vdIn *vd)
             goto fatal;
         }
     }
+    /*Test format it support */
+    memset(&vd->fmt, 0, sizeof(struct v4l2_format));
+    vd->fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (ioctl(vd->fd, VIDIOC_G_FMT, &vd->fmt) < 0)
+    {
+        printf("get format failed\n");
+        goto fatal;
+    }
+    else
+    {
+        printf("Width = %d\n", vd->fmt.fmt.pix.width);
+        printf("Height = %d\n", vd->fmt.fmt.pix.height);
+        //printf(��Image size = %d\n��, imagesize);
+        printf("Image size = %d\n", vd->fmt.fmt.pix.sizeimage);
+        printf("pixelformat = %d\n", vd->fmt.fmt.pix.pixelformat);
+    }
+
     /* set format in */
     memset(&vd->fmt, 0, sizeof(struct v4l2_format));
     vd->fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -365,7 +384,7 @@ static int init_v4l2(struct vdIn *vd)
     }
 
     /* set framerate */
-    struct v4l2_streamparm *setfps;
+    struct v4l2_streamparm* setfps;
     setfps=(struct v4l2_streamparm *) calloc(1, sizeof(struct v4l2_streamparm));
     memset(setfps, 0, sizeof(struct v4l2_streamparm));
     setfps->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -398,7 +417,7 @@ static int init_v4l2(struct vdIn *vd)
         if (debug)
             printf("length: %u offset: %u\n", vd->buf.length,
                    vd->buf.m.offset);
-        vd->mem[i] = mmap(0 /* start anywhere */ ,
+        vd->mem[i] = mmap(0 /* start anywhere */,
                           vd->buf.length, PROT_READ, MAP_SHARED, vd->fd,
                           vd->buf.m.offset);
         if (vd->mem[i] == MAP_FAILED) {
@@ -479,25 +498,25 @@ int uvcGrab(struct vdIn *vd)
         int ret;
 
         /* Disable frame capturing unless we're in frame stream mode */
-        if (vd->rawFrameCapture == 1)
+        if(vd->rawFrameCapture == 1)
             vd->rawFrameCapture = 0;
 
         /* Create a file name and open the file */
         sprintf(filename, "frame%03u.raw", vd->fileCounter++ % 1000);
         frame = fopen(filename, "wb");
-        if (frame == NULL) {
+        if(frame == NULL) {
             perror("Unable to open file for raw frame capturing");
             goto end_capture;
         }
 
         /* Write the raw data to the file */
         ret = fwrite(vd->mem[vd->buf.index], vd->buf.bytesused, 1, frame);
-        if (ret < 1) {
+        if(ret < 1) {
             perror("Unable to write to file");
             goto end_capture;
         }
         printf("Saved raw frame to %s (%u bytes)\n", filename, vd->buf.bytesused);
-        if (vd->rawFrameCapture == 2) {
+        if(vd->rawFrameCapture == 2) {
             vd->rfsBytesWritten += vd->buf.bytesused;
             vd->rfsFramesWritten++;
         }
@@ -505,7 +524,7 @@ int uvcGrab(struct vdIn *vd)
 
         /* Clean up */
 end_capture:
-        if (frame)
+        if(frame)
             fclose(frame);
     }
 
@@ -532,8 +551,8 @@ end_capture:
 
     switch (vd->formatIn) {
     case V4L2_PIX_FMT_MJPEG:
-        if (vd->buf.bytesused <= HEADERFRAME1) {	/* Prevent crash on empty image */
-            /*	    if(debug)*/
+        if(vd->buf.bytesused <= HEADERFRAME1) {   /* Prevent crash on empty image */
+            /*      if(debug)*/
             printf("Ignoring empty buffer ...\n");
             return 0;
         }
@@ -547,7 +566,8 @@ end_capture:
                 /* if avifile is NULL, there was an error */
                 if (vd->avifile == NULL ) {
                     fprintf(stderr,"Error opening avifile %s\n",vd->avifilename);
-                } else {
+                }
+                else {
                     /* we default the fps to 15, we'll reset it on close */
                     AVI_set_video(vd->avifile, vd->width, vd->height,
                                   15, "MJPG");
@@ -717,7 +737,8 @@ int v4l2DownControl(struct vdIn *vd, int control)
             return -1;
         }
         printf ("Control name:%s set to value:%d\n", queryctrl.name, control_s.value);
-    } else {
+    }
+    else {
         printf ("Control name:%s already has min value:%d \n", queryctrl.name, min);
     }
     return control_s.value;
@@ -778,8 +799,7 @@ int v4l2ResetPanTilt(struct vdIn *vd,int pantilt)
 }
 
 int v4L2UpDownPan(struct vdIn *vd, short inc)
-{
-    int control = V4L2_CID_PAN_RELATIVE;
+{   int control = V4L2_CID_PAN_RELATIVE;
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int err;
@@ -796,8 +816,7 @@ int v4L2UpDownPan(struct vdIn *vd, short inc)
 }
 
 int v4L2UpDownTilt(struct vdIn *vd, short inc)
-{
-    int control = V4L2_CID_TILT_RELATIVE;
+{   int control = V4L2_CID_TILT_RELATIVE;
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int err;
@@ -813,8 +832,7 @@ int v4L2UpDownTilt(struct vdIn *vd, short inc)
     return 0;
 }
 
-int v4L2UpDownPanTilt(struct vdIn *vd, short inc_p, short inc_t)
-{
+int v4L2UpDownPanTilt(struct vdIn *vd, short inc_p, short inc_t) {
     int p_control = V4L2_CID_PAN_RELATIVE;
     int t_control = V4L2_CID_TILT_RELATIVE;
     struct v4l2_ext_controls control_s_array;
@@ -822,7 +840,7 @@ int v4L2UpDownPanTilt(struct vdIn *vd, short inc_p, short inc_t)
     struct v4l2_ext_control control_s[2];
     int err;
 
-    if (isv4l2Control(vd, p_control, &queryctrl) < 0 ||
+    if(isv4l2Control(vd, p_control, &queryctrl) < 0 ||
             isv4l2Control(vd, t_control, &queryctrl) < 0)
         return -1;
     control_s_array.count = 2;
@@ -854,8 +872,7 @@ union pantilt {
 } __attribute__((packed)) ;
 
 int v4L2UpDownPan(struct vdIn *vd, short inc)
-{
-    int control = V4L2_CID_PANTILT_RELATIVE;
+{   int control = V4L2_CID_PANTILT_RELATIVE;
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int err;
@@ -878,8 +895,7 @@ int v4L2UpDownPan(struct vdIn *vd, short inc)
 }
 
 int v4L2UpDownTilt(struct vdIn *vd, short inc)
-{
-    int control = V4L2_CID_PANTILT_RELATIVE;
+{   int control = V4L2_CID_PANTILT_RELATIVE;
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int err;
@@ -901,8 +917,7 @@ int v4L2UpDownTilt(struct vdIn *vd, short inc)
 #endif
 
 int v4l2SetLightFrequencyFilter(struct vdIn *vd, int flt)
-{
-    int control = V4L2_CID_POWER_LINE_FREQUENCY;
+{   int control = V4L2_CID_POWER_LINE_FREQUENCY;
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int err;
